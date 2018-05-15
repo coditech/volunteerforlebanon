@@ -1,0 +1,36 @@
+{
+  "name": "zena",
+  "version": "0.1.0",
+  "homepage": "https://xananax.github.io/zena",
+  "private": true,
+  "dependencies": {
+    "classnames": "^2.2.5",
+    "concurrently": "^3.5.1",
+    "convenable": "^0.0.7",
+    "firebase": "^5.0.2",
+    "gh-pages": "^1.1.0",
+    "node-sass-chokidar": "^1.3.0",
+    "picnic": "^6.5.0",
+    "react": "^16.3.2",
+    "react-dom": "^16.3.2",
+    "react-helmet": "^5.2.0",
+    "react-lazyload": "^2.3.0",
+    "react-router": "^4.2.0",
+    "react-router-dom": "^4.2.2",
+    "react-scripts": "1.1.4",
+    "react-toastify": "^4.0.1",
+    "remarkable": "^1.7.1"
+  },
+  "scripts": {
+    "start:react": "react-scripts start",
+    "start:sass": "npm run build:sass && node-sass-chokidar src/ -o src/ --watch --recursive",
+    "build:react": "react-scripts build",
+    "build:sass": "node-sass-chokidar src/ -o src/",
+    "start": "concurrently --kill-others-on-fail --names \"react,sass\" \"npm run start:react\" \"npm run start:sass\"",
+    "build": "npm run build:sass && npm run build:react",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  }
+}

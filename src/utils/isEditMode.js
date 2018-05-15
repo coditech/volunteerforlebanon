@@ -1,0 +1,1 @@
+export const isEditMode = () => window.location.href.indexOf('edit') >= 0
