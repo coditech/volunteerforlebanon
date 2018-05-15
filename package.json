@@ -1,7 +1,7 @@
 {
-  "name": "zena",
+  "name": "volunteer",
   "version": "0.1.0",
-  "homepage": "https://xananax.github.io/zena",
+  "homepage": "https://coditech.github.io/volunteerforlebanon",
   "private": true,
   "dependencies": {
     "classnames": "^2.2.5",
