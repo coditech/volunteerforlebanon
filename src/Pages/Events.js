@@ -3,6 +3,8 @@ import { FirebaseProvider, upload, removeFile, CREATE, DELETE, UPDATE } from '..
 import { isEditMode, renderMarkdown, serializeForm, slugify, toast, readImageFromFile } from '../utils'
 import { Page, Img, Content, Pane, Link, Loading, Title } from '../Components'
 
+const isAdmin = (window.location.href.indexOf('admin') >= 0 )
+
 const prepare = (item, action, batch) => {
   if(action === CREATE || action === UPDATE ){
     const { image, title, text, slug:_slug, id, date_from, date_to } = item
@@ -110,7 +112,7 @@ class Editor extends React.Component{
                 <input title="Drop image or click me" name="image" type="file" onChange={this.onChange(fileToImage)}/>
               </label>
             </div>
-            { (window.location.href.indexOf('admin') >= 0 ) && <label>
+            { isAdmin && <label>
                 <input type="checkbox" name="published" defaultValue={published}/>
                 <span class="checkable">published</span>
               </label>
@@ -158,10 +160,16 @@ const EventsList = (event_slug) => ({ process, items, loading, updating }) => {
     content = <Loading/>
   }
   else if(!event_slug){
-    content = items.map( event => el(EventMini, { key:event.id, process, editMode, ...event }))
+    const _items = isAdmin ? items : items.filter(item=>item.published)
+    content = _items.map( event => el(EventMini, { key:event.id, process, editMode, ...event }))
   }else{
     if(event_slug==='new'){
-      content = <Editor action="create" process={process}/>
+      content = 
+        <div>
+          <h1>Submit a Volunteering thing</h1>
+          <p>Submit your volunteering thing thing</p>
+          <Editor action="create" process={process}/>
+        </div>
     }else{
       const event = items.find(({slug})=>(slug===event_slug))
       if(event){
