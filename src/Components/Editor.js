@@ -1,39 +1,110 @@
-import { React } from 'react'
-import { handle_form_submit } from 'convenable'
+import React from "react";
+import { handle_form_submit, process_form, get_input_value } from "convenable";
 
-export class Editor extends React.Component{
-  state = { html:'' }
-  
-  onError = ({ message:error }) => this.setState({error})
+export class Editor extends React.Component {
+  state = {
+    validate: null,
+    transform: null,
+    processForm: null,
+    values: null,
+    originalValues: null
+  };
 
-  onValidForm = ( serialized ) => this.props.onSubmit && this.props.onSubmit(serialized)
-
-  handleForm = handle_form_submit( ( serialized ) => {
-    const { validate, transform } = this.props
-    if(validate){
-      return Promise.resolve()
-        .then( () => validate(serialized) )
-        .then( () => transform ? transform(serialized) : serialized )
-        .then(this.onValidForm)
-        .catch(this.onError)
+  static getDerivedStateFromProps(props, state) {
+    let newState = state;
+    let changed = false;
+    if (
+      props.validate !== state.validate ||
+      props.transform !== state.transform
+    ) {
+      newState = {
+        ...newState,
+        validate: props.validate,
+        transform: props.transform,
+        processForm: process_form(props)
+      };
+      changed = true;
     }
-    if(transform){
-      return Promise.resolve()
-        .then( () => transform(serialized) )
-        .then(this.onValidForm)
-        .catch(this.onError)
+    if (props.values && props.values !== state.originalValues) {
+      newState = {
+        ...newState,
+        values: props.values,
+        originalValues: props.values
+      };
+      changed = true;
     }
-    return this.onValidForm(serialized)
-  })
-
-  render(){
-    const { children } = this.props
-    const { error } = this.state
-    return (
-      <form onSubmit={this.handleForm}>
-        { children }
-        <input type="submit" value="ok"/>
-      </form>
-    )
+    return changed ? newState : null;
   }
-} 
+
+  onError = ({ errors }) => this.setState({ errors });
+
+  onValidForm = serialized =>
+    this.setState(
+      { values: serialized.values },
+      () => this.props.onSubmit && this.props.onSubmit(serialized)
+    );
+
+  onSubmit = handle_form_submit(serialized =>
+    this.state
+      .processForm(serialized)
+      .then(
+        validated =>
+          validated.errors
+            ? this.onError(validated)
+            : this.onValidForm(validated)
+      )
+  );
+
+  setValue = (name, value) => this.setState({ values:{ ...this.state.values, [name]: value } });
+
+  onChange = cb => evt => {
+    const input = evt.target;
+    const value = get_input_value(input);
+    if(typeof cb === 'undefined'){
+      this.setValue(input.name,value)
+    }
+    else if(typeof cb === 'string'){
+      this.setValue(cb,value)
+    }
+    else if(typeof cb === 'function'){
+      cb(value,this.setValue)
+    }
+  };
+
+  resetField = name => {
+    const value = this.state.originalValues[name];
+    const values = { ...this.state.values, [name]: value };
+    this.setState({ values });
+  };
+
+  reset = () => {
+    const values = this.state.originalValues;
+    this.setState({ values });
+  };
+
+  collectProps() {
+    const { children: renderFunction, className } = this.props;
+    const { errors, values } = this.state;
+    const { onChange, resetField, reset, onSubmit } = this;
+    const props = {
+      renderFunction,
+      errors,
+      values,
+      onChange,
+      resetField,
+      reset,
+      onSubmit
+    };
+    return props;
+  }
+
+  render() {
+    const props = this.collectProps();
+    const { className, renderFunction } = props;
+    return (
+      <form className={className} onSubmit={this.onSubmit} onReset={this.reset}>
+        { renderFunction(props) }
+      </form>
+    );
+  }
+}

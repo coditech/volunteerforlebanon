@@ -2,7 +2,8 @@ import React, { createElement as el } from 'react'
 import { FirebaseProvider, upload, removeFile, CREATE, DELETE, UPDATE } from '../Components/FirebaseProvider' 
 import { isEditMode, renderMarkdown, serializeForm, slugify, toast } from '../utils'
 import { Page, Content, Pane, Link, FullWidthImage, Loading, Title } from '../Components'
-
+import { Editor } from '../Components/Editor'
+import { read_image_from_file } from 'convenable'
 const prepare = (item, action, batch) => {
   if(action === CREATE || action === UPDATE ){
     const { image, title, text, slug:_slug, id } = item
@@ -41,7 +42,68 @@ const prepare = (item, action, batch) => {
   }
 }
 
-class Editor extends React.Component{
+const validate = ( {values:{title}}, errors ) => {
+  if(!title){
+    errors.title = 'title is mandatory'
+  }
+}
+
+const transform = ( form ) => {
+  const slug = slugify(form.values.title)
+  const html = renderMarkdown(form.values.text)
+  return { ...form, values:{...form.values, slug, html }}
+}
+
+const Control = ({ errors, values, onChange, name, id, inputType, label, items }) => {
+
+  return (<div>
+    <label htmlFor={id}>
+      { inputType !== 'checkbox' && inputType !== 'radio'
+      ? <span>{label}</span>
+      : false
+      }
+      { inputType === 'textarea'
+      ? <textarea id={id} defaultValue={values[name]} value={onChange ? values[name] : '' }/>
+      : inputType === 'checkbox'
+      ? <input id={id} type={inputType} checked={values[name]}/>
+      : inputType === 'select'
+      ? <select>
+          { items.map( item => <option key={item.value} value={item.value}>{item.label}</option>) }
+        </select>
+      : inputType === 'radio'
+      ? items.map( item => <label><input type='radio' key={item.value} value={item.value}/><span>{item.label}</span></label>)
+      : <input id={id} type={inputType} defaultValue={values[name]}/>
+      }
+      { inputType === 'checkbox'
+      ? <span>{label}</span>
+      : false
+      }
+    </label>
+    { errors && errors[name] && <label htmlFor={id}>errors[name]</label>}
+  </div>)
+}
+
+const onFileChange = (file,set) => {
+  read_image_from_file(file).then(image => set('image',image))
+}
+
+const ArticleEditor = ({ id, slug, title, text, html, image }) => 
+  <Editor transform={ transform } validate={validate} values={{id, slug, title,  text, html, image }} onSubmit={(things)=>console.log(things)}>
+    { ({ values, errors, onChange }) => <fieldset>
+        <input type="hidden" name="id" defaultValue={values.id}/>
+        <input type="hidden" name="slug" defaultValue={values.slug}/>
+        <input type="hidden" name="html" defaultValue={values.html}/>
+        <input name="title" defaultValue={values.title}/>
+        <textarea name="text" defaultValue={values.text} onChange={onChange()}/>
+        <Pane value={renderMarkdown(values.text)}/>
+        <input type="file" name="image" onChange={onChange(onFileChange)}/>
+        { values.image && <FullWidthImage {...values.image}/> }
+        <input type="submit" value="ok"/>
+      </fieldset>
+    }
+  </Editor>
+
+class ArticlseEditor extends React.Component{
   state = { html:'' }
   handleForm = (evt) => {
     evt.preventDefault();
@@ -85,7 +147,7 @@ const Article = ({ id, slug, html, title, text, image, process, editMode }) =>
     <h1>{title}</h1>
     { isEditMode() && <button onClick={()=>process(DELETE,{id})}>delete</button> }
     <Pane value={html}/>
-    { isEditMode() && <Editor action="update" text={text} title={title} id={id} slug={slug} process={process}/> }
+    { isEditMode() && <ArticleEditor action="update" image={image} text={text} title={title} id={id} slug={slug} process={process}/> }
   </div>
 
 const ArticleMini = ({ slug, title }) => 
@@ -102,7 +164,7 @@ const ArticlesList = (article_slug) => ({ process, items, loading, updating }) =
     content = items.map( article => el(ArticleMini, { key:article.id, process, ...article }))
   }else{
     if(article_slug==='new'){
-      content = <Editor action="create" process={process}/>
+      content = <ArticleEditor action="create" process={process}/>
     }else{
       const article = items.find(({slug})=>(slug===article_slug))
       if(article){
