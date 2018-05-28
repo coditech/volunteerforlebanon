@@ -61,6 +61,7 @@ export class Editor extends React.Component {
     const input = evt.target;
     const value = get_input_value(input);
     if(typeof cb === 'undefined'){
+      console.log(input.value,value)
       this.setValue(input.name,value)
     }
     else if(typeof cb === 'string'){
@@ -93,7 +94,8 @@ export class Editor extends React.Component {
       onChange,
       resetField,
       reset,
-      onSubmit
+      onSubmit,
+      className
     };
     return props;
   }

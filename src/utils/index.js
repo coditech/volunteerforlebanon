@@ -7,4 +7,6 @@ export {
 } from 'convenable'
 export * from './isEditMode'
 export * from './renderMarkdown'
+export * from './uploadFileWithToaster'
+export * from './deleteFileWithToaster'
 export { toast } from 'react-toastify'
