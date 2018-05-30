@@ -39,10 +39,9 @@ export class Editor extends React.Component {
   onError = ({ errors }) => this.setState({ errors });
 
   onValidForm = serialized =>
-    this.setState(
-      { values: serialized.values },
-      () => this.props.onSubmit && this.props.onSubmit(serialized)
-    );
+    this.setState({ values: serialized.values, errors: {} }, () => {
+      this.props.onSubmit && this.props.onSubmit(serialized);
+    });
 
   onSubmit = handle_form_submit(serialized =>
     this.state
@@ -55,20 +54,19 @@ export class Editor extends React.Component {
       )
   );
 
-  setValue = (name, value) => this.setState({ values:{ ...this.state.values, [name]: value } });
+  setValue = (name, value) =>
+    this.setState({ values: { ...this.state.values, [name]: value } });
 
   onChange = cb => evt => {
     const input = evt.target;
     const value = get_input_value(input);
-    if(typeof cb === 'undefined'){
-      console.log(input.value,value)
-      this.setValue(input.name,value)
-    }
-    else if(typeof cb === 'string'){
-      this.setValue(cb,value)
-    }
-    else if(typeof cb === 'function'){
-      cb(value,this.setValue)
+    if (typeof cb === "undefined") {
+      console.log(input.value, value);
+      this.setValue(input.name, value);
+    } else if (typeof cb === "string") {
+      this.setValue(cb, value);
+    } else if (typeof cb === "function") {
+      cb(value, this.setValue);
     }
   };
 
@@ -84,7 +82,7 @@ export class Editor extends React.Component {
   };
 
   collectProps() {
-    const { children: renderFunction, className } = this.props;
+    const { children: renderFunction, className, action } = this.props;
     const { errors, values } = this.state;
     const { onChange, resetField, reset, onSubmit } = this;
     const props = {
@@ -95,17 +93,23 @@ export class Editor extends React.Component {
       resetField,
       reset,
       onSubmit,
-      className
+      className,
+      action
     };
     return props;
   }
 
   render() {
     const props = this.collectProps();
-    const { className, renderFunction } = props;
+    const { className, renderFunction, action } = props;
     return (
-      <form className={className} onSubmit={this.onSubmit} onReset={this.reset}>
-        { renderFunction(props) }
+      <form
+        className={className}
+        action={action}
+        onSubmit={this.onSubmit}
+        onReset={this.reset}
+      >
+        {renderFunction(props)}
       </form>
     );
   }

@@ -1,41 +1,18 @@
 import React, { createElement as el } from 'react'
-import { FirebaseProvider, CREATE, DELETE, UPDATE } from '../Components/FirebaseProvider' 
+import { FirebaseProvider } from '../Components/FirebaseProvider' 
 import { isEditMode, renderMarkdown, slugify, uploadFileWithToaster, deleteFileWithToaster } from '../utils'
 import { Page, Content, Pane, Link, FullWidthImage, Loading, Title } from '../Components'
 import { Editor } from '../Components/Editor'
 import { FormControl as Control } from '../Components/FormControl'
 import { read_image_from_file } from 'convenable'
 
-
-const prepare = (item, action, batch) => {
-  if(action === CREATE || action === UPDATE ){
-    const { image, title, text, slug:_slug, id } = item
-    const slug = _slug || slugify(title)
-    const props = {
-      title,
-      text,
-      html:renderMarkdown(text),
-      slug,
-      id:id||slug
-    }
-    if(image){
-      uploadFileWithToaster('/articles',image).then( image => ({ ...props, image }))
-    }
-    return props
-  }
-  if( action === DELETE && item.image && item.image.id ){
-    const image = item.image
-    return deleteFileWithToaster(image)
-  }
-}
-
 const onSubmit = (process) => (form) => {
   console.log(form)
+  // uploadFileWithToaster('/articles',form.values.image).then( image => process(form.action,{ ...props, image }))
 } 
 
 const onRemove = (process) => (form) => {
-  evt.preventDefault()
-  return deleteFileWithToaster(item.image).then(()=>process(DELETE,{id:form.values.id}))
+  return deleteFileWithToaster(form.values.image).then(()=>process('delete',{id:form.values.id}))
 }
 
 const validate = ( form, errors ) => {
@@ -50,11 +27,11 @@ const transform = ( form ) => {
   return { ...form, values:{...form.values, slug, html }}
 }
 
-const onFileChange = (file,set) => {
+const onFileChange = ( file, set ) => {
   read_image_from_file(file).then(image => set('image',image))
 }
 
-const ArticleEditor = ({action, ...values}) => 
+const ArticleEditor = ({action, onSubmit, ...values}) => 
   <Editor {...{action,transform,validate,values,onSubmit}}>
     { ({ values, errors, onChange }) => <div>
         <Control name="id" type="hidden" values={values} errors={errors}/>
@@ -68,15 +45,15 @@ const ArticleEditor = ({action, ...values}) =>
     }
   </Editor>
 
-const Article = ({ id, slug, html, title, text, image, process, editMode }) => 
+const Article = ({ id, slug, html, title, text, image, onSubmit, editMode }) => 
   <div>
     <Title value={title}/>
     { image && <FullWidthImage {...image}/>
     }
     <h1>{title}</h1>
-    { isEditMode() && <button onClick={()=>process(DELETE,{id})}>delete</button> }
+    { isEditMode() && <button onClick={()=>onRemove({id,image})}>delete</button> }
     <Pane value={html}/>
-    { isEditMode() && <ArticleEditor action="update" {...{ id, slug, html, title, text, image }}/> }
+    { isEditMode() && <ArticleEditor action="update" onSubmit={onSubmit} {...{ id, slug, html, title, text, image }}/> }
   </div>
 
 const ArticleMini = ({ slug, title }) => 
@@ -84,33 +61,33 @@ const ArticleMini = ({ slug, title }) =>
     <Link to={`/articles/${slug}`}>{title}</Link>
   </h3>
 
-const ArticlesList = (article_slug) => ({ process, items, loading, updating }) => {
-  let content;
-  if(loading){
-    content = <Loading/>
+const getArticleAndRender = (process, article_slug) => {
+  const article = items.find(({slug})=>(slug===article_slug))
+  if(article){
+    return <Article onSubmit={onSubmit(process)} onRemove={onRemove(process)} { ...article}/>
   }
-  else if(!article_slug){
-    content = items.map( article => el(ArticleMini, { key:article.id, process, ...article }))
-  }else{
-    if(article_slug==='new'){
-      content = <ArticleEditor action="create" process={process}/>
-    }else{
-      const article = items.find(({slug})=>(slug===article_slug))
-      if(article){
-        content = el(Article, { process, ...article })
-      }
-    }
-  }
-  return (
-    <Page>
-      <Content>
-        { content }
-      </Content>
-    </Page>
-  )
+  return <div>not found</div>
 }
 
-export const Articles = ({match:{ params:{article} }}) => 
-  <FirebaseProvider collection='articles' prepare={prepare}>
-    { ArticlesList(article) }
+export const Articles = ({match:{ params:{article:article_slug} }}) => 
+  <FirebaseProvider collection='articles'>
+    { ({ process, items, loading, updating }) => {
+      const content = (
+        loading 
+      ? <Loading/>
+      : !article_slug
+      ? items.map( article => <ArticleMini key={article.id} {...article}/>)
+      : article_slug === 'new'
+      ? <ArticleEditor action="create" onSubmit={onSubmit(process)}/>
+      : getArticleAndRender(process, article_slug)
+      )
+      return (
+        <Page>
+          <Content>
+            { content }
+          </Content>
+        </Page>
+      )
+    } 
+  }
   </FirebaseProvider>
