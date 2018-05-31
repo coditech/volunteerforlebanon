@@ -6,6 +6,7 @@
         "browserslist",
         "convenable",
         "datetime",
+        "dropfile",
         "dropimage",
         "firestore",
         "keyframes",

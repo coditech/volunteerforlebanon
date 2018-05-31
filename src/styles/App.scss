@@ -4,6 +4,7 @@
 @import './typography.scss';
 @import '../../node_modules/react-toastify/scss/main.scss';
 @import './spinner';
+@import './dropfile';
 
 body
   { background:#fdfdfd;
@@ -87,10 +88,6 @@ p a
 .mini-text
   { font-size: .6em
   ; padding: .3em
-  }
-
-.dropimage
-  { padding-bottom: 75%
   }
 
 .event-image, .event-content
