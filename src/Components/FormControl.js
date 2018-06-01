@@ -24,10 +24,10 @@ export const FormControl = ({ errors, values, onChange, name, id, type:inputType
       ? <input name={name} placeholder={label} id={id} type={inputType} defaultChecked={values[name]} onChange={onChange}/>
       : inputType === 'select'
       ? <select name={name} defaultValue={values[name]} onChange={onChange}>
-          { items.map( item => <option key={item.value} value={item.value}>{item.label}</option>) }
+          { items.map( item => <option key={item.value||item.label} value={item.value||item.label}>{item.label}</option>) }
         </select>
       : inputType === 'radio'
-      ? items.map( item => <label><input type='radio' key={item.value} value={item.value}/><span>{item.label}</span></label>)
+      ? items.map( item => <label><input type='radio' key={item.value||item.label} value={item.value||item.label}/><span>{item.label}</span></label>)
       : inputType === 'file'
       ? <FileInput multiple={multiple} name={name} id={id} title={label} defaultValue={values[name]} onChange={onChange} max={max}/>
       : inputType === 'image'
@@ -35,7 +35,7 @@ export const FormControl = ({ errors, values, onChange, name, id, type:inputType
       : <input name={name} id={id} placeholder={label} type={inputType} defaultValue={values[name]} onChange={onChange} max={max}/>
       }
       { inputType === 'checkbox'
-      ? <span>{label}</span>
+      ? <span className="checkable">{label}</span>
       : false
       }
     </label>

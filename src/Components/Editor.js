@@ -102,6 +102,11 @@ export class Editor extends React.Component {
   render() {
     const props = this.collectProps();
     const { className, renderFunction, action } = props;
+    if(typeof renderFunction !== 'function'){
+      console.log('???',renderFunction)
+      return false;
+    }
+    const content = renderFunction(props)
     return (
       <form
         className={className}
@@ -109,7 +114,7 @@ export class Editor extends React.Component {
         onSubmit={this.onSubmit}
         onReset={this.reset}
       >
-        {renderFunction(props)}
+        {content}
       </form>
     );
   }
